@@ -17,4 +17,7 @@ Author: Paul Lipkowski
     *  (*no flag*) - Show execution time of COMMAND in milliseconds
     * `-h, --help` - Print help
     * `-n, --no-feed-line` - Do not feed line after having shown output
-- Example: `fpclock 'ls -l'`
+    * `-p N, --prec=N` - Set precision to N digits (default N=4)
+- Example: 
+    * `fpclock 'ls -l'`
+    * `fpclock 'cp ./foo/ ./bar -r' -n`

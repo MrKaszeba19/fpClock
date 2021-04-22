@@ -3,7 +3,7 @@ program main;
 {$APPTYPE CONSOLE}
 {$mode objfpc}{$H+}
 
-uses Classes, CustApp,
+uses SysUtils, Classes, CustApp,
     {$IFDEF UNIX}{$IFDEF UseCThreads}
     cthreads,
     {$ENDIF}
@@ -14,7 +14,8 @@ uses Classes, CustApp,
 type
     FPClock = class(TCustomApplication)
     private
-        FeedLine : Boolean;
+        FeedLine  : Boolean;
+        Precision : Integer;
     protected
         procedure DoRun; override;
     public
@@ -31,11 +32,16 @@ var
 begin
     if HasOption('h', 'help') then begin
         WriteHelp();
-        Terminate;
-        //Halt();
+        Halt();
     end;
-    if HasOption('n', 'no-feed-line') then begin
-        FeedLine := False;
+    if HasOption('n', 'no-feed-line') then FeedLine := False;
+    if HasOption('p', 'prec') then
+    begin
+        if not (TryStrToInt(getOptionValue('p', 'prec'), Precision)) or (Precision < 0) 
+            then begin
+                writeln('Error: invalid precision value.');
+                Halt(1);
+            end;
     end;
 
     input := ParamStr(1);
@@ -43,7 +49,7 @@ begin
     Clock.Start();
     Status := fpSystem(input);
     Clock.Stop();
-    write((Clock.ElapsedTicks / 10000.0):2:6);
+    write((Clock.ElapsedTicks / 10000.0):2:(Precision));
     if (FeedLine) then writeln();
     Terminate;
 end;
@@ -53,6 +59,7 @@ begin
     inherited Create(TheOwner);
     StopOnException:=True;
     FeedLine := True;
+    Precision := 4;
 end;
 
 destructor FPClock.Destroy;
@@ -62,15 +69,17 @@ end;
 
 procedure FPClock.WriteHelp;
 begin
-    writeln('Usage: fpclock ''COMMAND'' -flags');
+    writeln('Usage: fpclock ''COMMAND'' flags');
     writeln();
     writeln('Available flags: ');
-    writeln('    (no flag)         : Show execution time of COMMAND in milliseconds');
-    writeln('   -h, --help         : Print help');
-    writeln('   -n, --no-feed-line : Do not feed line after having shown output ');
+    writeln('    (no flag)           : Show execution time of COMMAND in milliseconds with precision of 4 digits');
+    writeln('   -h  , --help         : Print help');
+    writeln('   -n  , --no-feed-line : Do not feed line after having shown output ');
+    writeln('   -p N, --prec=N       : Set precision to N digits (default N=4)');
     writeln();
     writeln('Examples');
     writeln('    - fpclock ''ls -l''');
+    writeln('    - fpclock ''cp ./foo/ ./bar -r'' -n');
 end;
 
 var App : FPClock;
