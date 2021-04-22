@@ -11,11 +11,21 @@ uses SysUtils, Classes, CustApp,
     {$ENDIF} 
     StopWatch;
 
+const NANOSEC = 0.01;
+const TICK = 1;
+const MICROSEC = 10.0;
+const MILLISEC = 10000.0;
+const SEC = 10000000.0;
+const MIN = SEC*60;
+const HOUR = MIN*60;
+const DAY = HOUR*24;
+
 type
     FPClock = class(TCustomApplication)
     private
         FeedLine  : Boolean;
         Precision : Integer;
+        Units     : Extended;
     protected
         procedure DoRun; override;
     public
@@ -39,9 +49,40 @@ begin
     begin
         if not (TryStrToInt(getOptionValue('p', 'prec'), Precision)) or (Precision < 0) 
             then begin
-                writeln('Error: invalid precision value.');
+                writeln(StdErr, 'Error: Invalid precision parameter value.');
                 Halt(1);
             end;
+    end;
+    if HasOption('u', 'units') then
+    begin
+        case getOptionValue('u', 'units') of
+            'ticks' : Units := TICK;
+            'ns' : Units := NANOSEC;
+            'nano' : Units := NANOSEC;
+            'nanoseconds' : Units := NANOSEC;
+            'mus' : Units := MICROSEC;
+            'μs' : Units := MICROSEC;
+            'micro' : Units := MICROSEC;
+            'microseconds' : Units := MICROSEC;
+            'ms' : Units := MILLISEC;
+            'milli' : Units := MILLISEC;
+            'milliseconds' : Units := MILLISEC;
+            's' : Units := SEC;
+            'secs' : Units := SEC;
+            'seconds' : Units := SEC;
+            'm' : Units := MIN;
+            'mins' : Units := MIN;
+            'minutes' : Units := MIN;
+            'h' : Units := HOUR;
+            'hrs' : Units := HOUR;
+            'hours' : Units := HOUR;
+            'd' : Units := DAY;
+            'days' : Units := DAY;
+            else begin
+                writeln(StdErr, 'Error: Invalid units parameter value');
+                Halt(1);
+            end;
+        end;
     end;
 
     input := ParamStr(1);
@@ -49,7 +90,7 @@ begin
     Clock.Start();
     Status := fpSystem(input);
     Clock.Stop();
-    write((Clock.ElapsedTicks / 10000.0):2:(Precision));
+    write((Clock.ElapsedTicks / Units):2:(Precision));
     if (FeedLine) then writeln();
     Terminate;
 end;
@@ -60,6 +101,7 @@ begin
     StopOnException:=True;
     FeedLine := True;
     Precision := 4;
+    Units := SEC;
 end;
 
 destructor FPClock.Destroy;
@@ -72,14 +114,20 @@ begin
     writeln('Usage: fpclock ''COMMAND'' flags');
     writeln();
     writeln('Available flags: ');
-    writeln('    (no flag)           : Show execution time of COMMAND in milliseconds with precision of 4 digits');
+    writeln('    (no flag)           : Show execution time of COMMAND in seconds');
+    writeln('                          with precision of 4 digits');
+    writeln('                          and feed the line afterwards');
     writeln('   -h  , --help         : Print help');
-    writeln('   -n  , --no-feed-line : Do not feed line after having shown output ');
+    writeln('   -n  , --no-feed-line : Do not feed the line after having shown output ');
     writeln('   -p N, --prec=N       : Set precision to N digits (default N=4)');
+    writeln('   -u U, --units=U      : Set measurement unit to U');
+    writeln('                          (U in [ticks, ns, mus, μs, ms, s, m, h, d])');
     writeln();
     writeln('Examples');
     writeln('    - fpclock ''ls -l''');
     writeln('    - fpclock ''cp ./foo/ ./bar -r'' -n');
+    writeln();
+    writeln('More info at https://github.com/RooiGevaar19/fpClock');
 end;
 
 var App : FPClock;
