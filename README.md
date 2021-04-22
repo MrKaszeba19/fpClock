@@ -1,6 +1,7 @@
 # fpclock 
 
 **fpclock** – a program measuring process execution
+
 Author: Paul Lipkowski
 
 ## Installation
