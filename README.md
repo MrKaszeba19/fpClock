@@ -1,6 +1,6 @@
 # fpclock 
 
-**fpclock** – a program measuring process execution
+**fpclock** – a program measuring process execution time
 
 Author: Paul Lipkowski
 
@@ -12,5 +12,9 @@ Author: Paul Lipkowski
 - Install to `$PATH` using `installBash.sh`
 
 ## Usage 
-- Syntax: `fpclock 'process'` 
+- Syntax: `fpclock 'process' [flags]`
+- Available flags:
+    *  (*no flag*) - Show execution time of COMMAND in milliseconds
+    * `-h, --help` - Print help
+    * `-n, --no-feed-line` - Do not feed line after having shown output
 - Example: `fpclock 'ls -l'`
