@@ -20,12 +20,30 @@ const MIN = SEC*60;
 const HOUR = MIN*60;
 const DAY = HOUR*24;
 
+function string_fromC(dupa : String) : String;
+begin
+	dupa := StringReplace(dupa, '\a', #7, [rfReplaceAll]);
+	dupa := StringReplace(dupa, '\b', #8, [rfReplaceAll]);
+	dupa := StringReplace(dupa, '\e', #27, [rfReplaceAll]);
+	dupa := StringReplace(dupa, '\f', #12, [rfReplaceAll]);
+	dupa := StringReplace(dupa, '\n', #10, [rfReplaceAll]);
+	dupa := StringReplace(dupa, '\r', #13, [rfReplaceAll]);
+	dupa := StringReplace(dupa, '\t', #9, [rfReplaceAll]);
+	dupa := StringReplace(dupa, '\v', #11, [rfReplaceAll]);
+	dupa := StringReplace(dupa, '\\', '\', [rfReplaceAll]);
+	dupa := StringReplace(dupa, '\''', #39, [rfReplaceAll]);
+	dupa := StringReplace(dupa, '\"', #34, [rfReplaceAll]);
+	dupa := StringReplace(dupa, '\?', '?', [rfReplaceAll]);
+	Result := dupa;
+end;
+
 type
     FPClock = class(TCustomApplication)
     private
         FeedLine  : Boolean;
         Precision : Integer;
         Units     : Extended;
+        CString   : Boolean;
     protected
         procedure DoRun; override;
     public
@@ -45,6 +63,7 @@ begin
         Halt();
     end;
     if HasOption('n', 'no-feed-line') then FeedLine := False;
+    if HasOption('c', 'cstring') then CString := True;
     if HasOption('p', 'prec') then
     begin
         if not (TryStrToInt(getOptionValue('p', 'prec'), Precision)) or (Precision < 0) 
@@ -85,7 +104,9 @@ begin
         end;
     end;
 
-    input := ParamStr(1);
+    if (CString) 
+        then input := string_fromC(ParamStr(1))
+        else input := ParamStr(1);
     Clock := TStopwatch.Create;
     Clock.Start();
     Status := fpSystem(input);
@@ -100,6 +121,7 @@ begin
     inherited Create(TheOwner);
     StopOnException:=True;
     FeedLine := True;
+    CString := False;
     Precision := 4;
     Units := SEC;
 end;
@@ -117,6 +139,7 @@ begin
     writeln('    (no flag)           : Show execution time of COMMAND in seconds');
     writeln('                          with precision of 4 digits');
     writeln('                          and feed the line afterwards');
+    writeln('   -c  , --cstring      : Input command is C-like formatted');
     writeln('   -h  , --help         : Print help');
     writeln('   -n  , --no-feed-line : Do not feed the line after having shown output ');
     writeln('   -p N, --prec=N       : Set precision to N digits (default N=4)');

@@ -15,6 +15,7 @@ Author: Paul Lipkowski
 - Syntax: `fpclock 'process' [flags]`
 - Available flags:
     *  (no flag) – Show execution time of COMMAND in seconds with precision of 4 digits and feed the line afterwards
+    * `-c`, `--cstring` – Input command is C-like formatted (e.g. `'echo \"Hello world\"'`)
     * `-h`, `--help` – Print help
     * `-n`, `--no-feed-line` – Do not feed the line after having shown output
     * `-p N`, `--prec=N` – Set precision to N digits (default N=4)
