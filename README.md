@@ -7,7 +7,8 @@ Author: Paul Lipkowski
 ## Installation
 
 - Required: FreePascal Compiler `fpc` (version 3.0.4 or newer)
-- So far tested only on Linux amd64. Not designed for 32-bit computers.
+- So far works on Linux amd64 only. Windows x64 compatibility is about to be made. 
+- Not designed for 32-bit computers.
 - Compile using `compile.sh`
 - Install to `$PATH` using `installBash.sh`
 
@@ -27,7 +28,8 @@ Author: Paul Lipkowski
     * milliseconds – `ms`, `milli` or `milliseconds`
     * microseconds – `μs`, `mus`, `micro` or `microseconds`
     * ticks – `ticks`
-    * nanoseconds – `ns`, `nano` or `nanoseconds` (stopwatch is accurate to 1 tick = 100 ns though).
+    * nanoseconds – `ns`, `nano` or `nanoseconds` (The stopwatch is accurate to 1 tick = 100 ns though)
+    * clock – `c`, `clock` (output like `00:00:00.0000`, amount of decimal numbers depends on `prec` flag).
 - Example: 
     * `fpclock 'ls -l'`
     * `fpclock 'cp ./foo/ ./bar -r' -n`

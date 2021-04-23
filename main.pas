@@ -9,7 +9,7 @@ uses SysUtils, Classes, CustApp,
     {$ENDIF}
     unix,
     {$ENDIF} 
-    StopWatch;
+    MathUtils, StopWatch;
 
 const NANOSEC = 0.01;
 const TICK = 1;
@@ -37,6 +37,25 @@ begin
 	Result := dupa;
 end;
 
+procedure printClocked(input : Extended; Precision : ShortInt);
+var
+    h,m,s : Extended;
+begin
+    h := ffloor(input/3600.0);
+    m := ffloor(fmod(input,3600.0)/60.0);
+    s := fmod(input,60.0);
+    if (h < 10.0)
+        then write('0', h:1:0, ':')
+        else write(h:2:0, ':');
+    if (m < 10.0)
+        then write('0', m:1:0, ':')
+        else write(m:2:0, ':');
+    if (s < 10.0)
+        then write('0', s:2:(Precision))
+        else write(s:2:(Precision));
+
+end;
+
 type
     FPClock = class(TCustomApplication)
     private
@@ -44,6 +63,7 @@ type
         Precision : Integer;
         Units     : Extended;
         CString   : Boolean;
+        Clocked   : Boolean;
     protected
         procedure DoRun; override;
     public
@@ -97,6 +117,8 @@ begin
             'hours' : Units := HOUR;
             'd' : Units := DAY;
             'days' : Units := DAY;
+            'c' : Clocked := True;
+            'clock' : Clocked := True;
             else begin
                 writeln(StdErr, 'Error: Invalid units parameter value');
                 Halt(1);
@@ -111,7 +133,9 @@ begin
     Clock.Start();
     Status := fpSystem(input);
     Clock.Stop();
-    write((Clock.ElapsedTicks / Units):2:(Precision));
+    if (Clocked) 
+        then printClocked(Clock.ElapsedTicks / Units, Precision)
+        else write((Clock.ElapsedTicks / Units):2:(Precision));
     if (FeedLine) then writeln();
     Terminate;
 end;
@@ -122,6 +146,7 @@ begin
     StopOnException:=True;
     FeedLine := True;
     CString := False;
+    Clocked := False;
     Precision := 4;
     Units := SEC;
 end;
@@ -144,7 +169,7 @@ begin
     writeln('   -n  , --no-feed-line : Do not feed the line after having shown output ');
     writeln('   -p N, --prec=N       : Set precision to N digits (default N=4)');
     writeln('   -u U, --units=U      : Set measurement unit to U');
-    writeln('                          (U in [ticks, ns, mus, μs, ms, s, m, h, d])');
+    writeln('                          (U in [ticks, clock, ns, mus, μs, ms, s, m, h, d])');
     writeln();
     writeln('Examples');
     writeln('    - fpclock ''ls -l''');
