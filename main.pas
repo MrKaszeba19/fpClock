@@ -4,7 +4,8 @@ program main;
 {$mode objfpc}{$H+}
 
 uses SysUtils, Classes, CustApp,
-    {$IFDEF UNIX}{$IFDEF UseCThreads}
+    {$IFDEF UNIX}
+    {$IFDEF UseCThreads}
     cthreads,
     {$ENDIF}
     unix,
@@ -74,9 +75,15 @@ end;
 
 procedure FPClock.DoRun;
 var
-    input  : String;
-    Status : LongInt;
-    Clock  : TStopWatch;
+    input    : String;
+    Clock    : TStopWatch;
+    {$IFDEF MSWINDOWS}
+    Result   : String;
+    ExecPath : String;
+    {$ENDIF}
+    {$IFDEF UNIX}
+    Status   : LongInt;
+    {$ENDIF}
 begin
     if HasOption('h', 'help') then begin
         WriteHelp();
@@ -129,9 +136,30 @@ begin
     if (CString) 
         then input := string_fromC(ParamStr(1))
         else input := ParamStr(1);
+    
+    {$IFDEF MSWINDOWS}
+    ExecPath := 'c:\windows\system32\cmd.exe';
+    if HasOption('e', 'env') then
+    begin
+        case getOptionValue('e', 'env') of
+            'cmd' : ExecPath := 'c:\windows\system32\cmd.exe';
+            'cmd.exe' : ExecPath := 'c:\windows\system32\cmd.exe';
+            'powershell.exe' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v1.0\powershell.exe';
+            'powershell' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v1.0\powershell.exe';
+            'ps' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v1.0\powershell.exe';
+            else ExecPath = getOptionValue('e', 'env');
+        end;
+    end;
+    {$ENDIF}
+
     Clock := TStopwatch.Create;
     Clock.Start();
+    {$IFDEF MSWINDOWS}
+    RunCommand(ExecPath, ['/c', input], s);
+    {$ENDIF}
+    {$IFDEF UNIX}
     Status := fpSystem(input);
+    {$ENDIF}
     Clock.Stop();
     if (Clocked) 
         then printClocked(Clock.ElapsedTicks / Units, Precision)
