@@ -193,6 +193,10 @@ begin
     writeln('                          with precision of 4 digits');
     writeln('                          and feed the line afterwards');
     writeln('   -c  , --cstring      : Input command is C-like formatted');
+    {$IFDEF MSWINDOWS}
+    writeln('   -e E, --env          : Choose the environment (Windows only)');
+    writeln('                          – either `cmd` (default) or `powershell`/`ps`');
+    {$ENDIF}
     writeln('   -h  , --help         : Print help');
     writeln('   -n  , --no-feed-line : Do not feed the line after having shown output ');
     writeln('   -p N, --prec=N       : Set precision to N digits (default N=4)');
