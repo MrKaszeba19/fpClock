@@ -10,6 +10,9 @@ uses SysUtils, Classes, CustApp,
     {$ENDIF}
     unix,
     {$ENDIF} 
+    {$IFDEF MSWINDOWS}
+    Process,
+    {$ENDIF}
     MathUtils, StopWatch;
 
 const NANOSEC = 0.01;
@@ -78,7 +81,7 @@ var
     input    : String;
     Clock    : TStopWatch;
     {$IFDEF MSWINDOWS}
-    Result   : String;
+    //Result   : String;
     ExecPath : String;
     {$ENDIF}
     {$IFDEF UNIX}
@@ -133,9 +136,14 @@ begin
         end;
     end;
 
-    if (CString) 
-        then input := string_fromC(ParamStr(1))
-        else input := ParamStr(1);
+    if not (HasOption('P', 'prompt')) then
+    begin
+        if (CString) 
+            then input := string_fromC(ParamStr(1))
+            else input := ParamStr(1);
+    end else begin
+        read(input);
+    end;
     
     {$IFDEF MSWINDOWS}
     ExecPath := 'c:\windows\system32\cmd.exe';
@@ -145,9 +153,17 @@ begin
             'cmd' : ExecPath := 'c:\windows\system32\cmd.exe';
             'cmd.exe' : ExecPath := 'c:\windows\system32\cmd.exe';
             'powershell.exe' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v1.0\powershell.exe';
-            'powershell' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v1.0\powershell.exe';
-            'ps' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v1.0\powershell.exe';
-            else ExecPath = getOptionValue('e', 'env');
+            'powershell'  : ExecPath := 'C:\Windows\System32\WindowsPowershell\v1.0\powershell.exe';
+            'powershell1' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v1.0\powershell.exe';
+            'powershell2' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v2.0\powershell.exe';
+            'powershell3' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v3.0\powershell.exe';
+            'powershell4' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v4.0\powershell.exe';
+            'ps'  : ExecPath := 'C:\Windows\System32\WindowsPowershell\v1.0\powershell.exe';
+            'ps1' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v1.0\powershell.exe';
+            'ps2' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v2.0\powershell.exe';
+            'ps3' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v3.0\powershell.exe';
+            'ps4' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v4.0\powershell.exe';
+            else ExecPath := getOptionValue('e', 'env');
         end;
     end;
     {$ENDIF}
@@ -155,12 +171,16 @@ begin
     Clock := TStopwatch.Create;
     Clock.Start();
     {$IFDEF MSWINDOWS}
-    RunCommand(ExecPath, ['/c', input], s);
+    //RunCommand(ExecPath, ['/c', input], Result);
+    SysUtils.ExecuteProcess(utf8toansi(ExecPath + ' /c "' + input + '"'), '', []);
     {$ENDIF}
     {$IFDEF UNIX}
     Status := fpSystem(input);
     {$ENDIF}
     Clock.Stop();
+    {$IFDEF MSWINDOWS}
+    //writeln(Result);
+    {$ENDIF}
     if (Clocked) 
         then printClocked(Clock.ElapsedTicks / Units, Precision)
         else write((Clock.ElapsedTicks / Units):2:(Precision));
@@ -194,18 +214,20 @@ begin
     writeln('                          and feed the line afterwards');
     writeln('   -c  , --cstring      : Input command is C-like formatted');
     {$IFDEF MSWINDOWS}
-    writeln('   -e E, --env          : Choose the environment (Windows only)');
+    writeln('   -e E, --env=E        : Choose the environment (Windows only)');
     writeln('                          – either `cmd` (default) or `powershell`/`ps`');
     {$ENDIF}
     writeln('   -h  , --help         : Print help');
     writeln('   -n  , --no-feed-line : Do not feed the line after having shown output ');
     writeln('   -p N, --prec=N       : Set precision to N digits (default N=4)');
+    writeln('   -P  , --prompt       : Prompt for a command from standard input');
     writeln('   -u U, --units=U      : Set measurement unit to U');
     writeln('                          (U in [ticks, clock, ns, mus, μs, ms, s, m, h, d])');
     writeln();
     writeln('Examples');
     writeln('    - fpclock ''ls -l''');
     writeln('    - fpclock ''cp ./foo/ ./bar -r'' -n');
+    writeln('    - fpclock --prompt');
     writeln();
     writeln('More info at https://github.com/RooiGevaar19/fpClock');
 end;

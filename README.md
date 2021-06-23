@@ -7,9 +7,9 @@ Author: Paul Lipkowski
 ## Installation
 
 - Required: FreePascal Compiler `fpc` (version 3.0.4 or newer)
-- So far works on Linux amd64 only. Windows x64 compatibility is about to be made. 
+- So far works on Linux amd64 and Windows x64 only. 
 - Not designed for 32-bit computers.
-- Compile using `compile.sh`
+- Compile using `compile.sh` on Linux (or `compile.bat` on Windows)
 - Install to `$PATH` using `installBash.sh`
 
 ## Usage 
@@ -17,10 +17,11 @@ Author: Paul Lipkowski
 - Available flags:
     *  (no flag) – Show execution time of COMMAND in seconds with precision of 4 digits and feed the line afterwards
     * `-c`, `--cstring` – Input command is C-like formatted (e.g. `'echo \"Hello world\"'`)
-    * `-e`, `--env` – Choose the environment – either `cmd` (default) or `powershell` (*Windows only*)
+    * `-e`, `--env=E` – Choose the environment – `E` is either `cmd` (default) or `powershell` (*Windows only*)
     * `-h`, `--help` – Print help
     * `-n`, `--no-feed-line` – Do not feed the line after having shown output
     * `-p N`, `--prec=N` – Set precision to N digits (default N=4)
+    * `-P`, `--prompt` – Prompt for a command from standard input
     * `-u U`, `--units=U` – Set measurement unit to U' (see more Us below)
 - Available units with their flag values (`U`):
     * days – `d` or `days`
