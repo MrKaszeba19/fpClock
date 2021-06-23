@@ -9,8 +9,10 @@ Author: Paul Lipkowski
 - Required: FreePascal Compiler `fpc` (version 3.0.4 or newer)
 - So far works on Linux amd64 and Windows x64 only. 
 - Not designed for 32-bit computers.
-- Compile using `compile.sh` on Linux (or `compile.bat` on Windows)
-- Install to `$PATH` using `installBash.sh`
+- If using Linux, then just compile by executing `compile.sh`
+    * Then you can install fpclock to `$PATH` using `installBash.sh`
+- If using Windows, then compile by executing `compile.bat`
+    * The default version of FPC is 3.0.4. If you use the another version of it, then edit the `compile.bat` script and change the setting containing version of FPC (variable `ver`) in order to match your FPC version.
 
 ## Usage 
 - Syntax: `fpclock 'process' [flags]`
@@ -23,6 +25,8 @@ Author: Paul Lipkowski
     * `-p N`, `--prec=N` – Set precision to N digits (default N=4)
     * `-P`, `--prompt` – Prompt for a command from standard input
     * `-u U`, `--units=U` – Set measurement unit to U' (see more Us below)
+    * `-w`  , `--wait` – Pause after measuring time (Windows only)
+    * `-w N`, `--wait=N` – Wait N milliseconds after measuring time (Windows only, default N=0)
 - Available units with their flag values (`U`):
     * days – `d` or `days`
     * minutes – `m`, `mins` or `minutes`

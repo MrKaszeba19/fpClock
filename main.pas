@@ -57,7 +57,6 @@ begin
     if (s < 10.0)
         then write('0', s:2:(Precision))
         else write(s:2:(Precision));
-
 end;
 
 type
@@ -68,6 +67,10 @@ type
         Units     : Extended;
         CString   : Boolean;
         Clocked   : Boolean;
+        {$IFDEF MSWINDOWS}
+        Wait      : Integer;
+        function GetLatestPowershell : String;
+        {$ENDIF}
     protected
         procedure DoRun; override;
     public
@@ -75,6 +78,29 @@ type
         destructor Destroy; override;
         procedure WriteHelp; virtual;
 end;
+
+{$IFDEF MSWINDOWS}
+function FPClock.GetLatestPowershell : String;
+var
+    a, b  : ShortInt;
+    Found : Boolean = False;
+begin
+    Result := 'C:\Windows\System32\WindowsPowershell\v1.0\powershell.exe';
+    for a := 8 downto 1 do
+    begin
+        for b := 1 downto 0 do
+        begin
+            if FileExists('C:\Windows\System32\WindowsPowershell\v'+IntToStr(a)+'.'+IntToStr(b)+'\powershell.exe') then
+            begin
+                Result := 'C:\Windows\System32\WindowsPowershell\v'+IntToStr(a)+'.'+IntToStr(b)+'\powershell.exe';
+                Found := True;
+            end;
+            if Found then Break;   
+        end;
+        if Found then Break;
+    end;
+end;
+{$ENDIF}
 
 procedure FPClock.DoRun;
 var
@@ -102,6 +128,17 @@ begin
                 Halt(1);
             end;
     end;
+
+    {$IFDEF MSWINDOWS}
+    if HasOption('w', 'wait') then
+    begin
+        if not (TryStrToInt(getOptionValue('w', 'wait'), Wait)) or (Wait < 0) 
+            then begin
+                Wait := -1;
+            end;
+    end;
+    {$ENDIF}
+
     if HasOption('u', 'units') then
     begin
         case getOptionValue('u', 'units') of
@@ -151,18 +188,26 @@ begin
     begin
         case getOptionValue('e', 'env') of
             'cmd' : ExecPath := 'c:\windows\system32\cmd.exe';
-            'cmd.exe' : ExecPath := 'c:\windows\system32\cmd.exe';
-            'powershell.exe' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v1.0\powershell.exe';
-            'powershell'  : ExecPath := 'C:\Windows\System32\WindowsPowershell\v1.0\powershell.exe';
+            'powershell'  : ExecPath := GetLatestPowershell();
             'powershell1' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v1.0\powershell.exe';
             'powershell2' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v2.0\powershell.exe';
             'powershell3' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v3.0\powershell.exe';
             'powershell4' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v4.0\powershell.exe';
-            'ps'  : ExecPath := 'C:\Windows\System32\WindowsPowershell\v1.0\powershell.exe';
+            'powershell5' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v5.0\powershell.exe';
+            'powershell5.1' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v5.1\powershell.exe';
+            'powershell6' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v6.0\powershell.exe';
+            'powershell7' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v7.0\powershell.exe';
+            'powershell8' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v8.0\powershell.exe';
+            'ps'  : ExecPath := GetLatestPowershell();
             'ps1' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v1.0\powershell.exe';
             'ps2' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v2.0\powershell.exe';
             'ps3' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v3.0\powershell.exe';
             'ps4' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v4.0\powershell.exe';
+            'ps5' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v5.0\powershell.exe';
+            'ps5.1' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v5.1\powershell.exe';
+            'ps6' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v6.0\powershell.exe';
+            'ps7' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v7.0\powershell.exe';
+            'ps8' : ExecPath := 'C:\Windows\System32\WindowsPowershell\v8.0\powershell.exe';
             else ExecPath := getOptionValue('e', 'env');
         end;
     end;
@@ -171,20 +216,24 @@ begin
     Clock := TStopwatch.Create;
     Clock.Start();
     {$IFDEF MSWINDOWS}
-    //RunCommand(ExecPath, ['/c', input], Result);
     SysUtils.ExecuteProcess(utf8toansi(ExecPath + ' /c "' + input + '"'), '', []);
     {$ENDIF}
     {$IFDEF UNIX}
     Status := fpSystem(input);
     {$ENDIF}
     Clock.Stop();
-    {$IFDEF MSWINDOWS}
-    //writeln(Result);
-    {$ENDIF}
+
     if (Clocked) 
         then printClocked(Clock.ElapsedTicks / Units, Precision)
         else write((Clock.ElapsedTicks / Units):2:(Precision));
     if (FeedLine) then writeln();
+
+    {$IFDEF MSWINDOWS}
+    if (Wait > 0) 
+        then Sleep(Wait)
+        else if (Wait = -1) then readln();
+    {$ENDIF}
+
     Terminate;
 end;
 
@@ -197,6 +246,9 @@ begin
     Clocked := False;
     Precision := 4;
     Units := SEC;
+    {$IFDEF MSWINDOWS}
+    Wait := 0;
+    {$ENDIF}
 end;
 
 destructor FPClock.Destroy;
@@ -223,6 +275,11 @@ begin
     writeln('   -P  , --prompt       : Prompt for a command from standard input');
     writeln('   -u U, --units=U      : Set measurement unit to U');
     writeln('                          (U in [ticks, clock, ns, mus, μs, ms, s, m, h, d])');
+    {$IFDEF MSWINDOWS}
+    writeln('   -w  , --wait         : Pause after measuring time (Windows only)');
+    writeln('   -w N, --wait=N       : Wait N milliseconds after measuring time ');
+    writeln('                          (Windows only, default N=0)');
+    {$ENDIF}
     writeln();
     writeln('Examples');
     writeln('    - fpclock ''ls -l''');
