@@ -24,6 +24,8 @@ const MIN = SEC*60;
 const HOUR = MIN*60;
 const DAY = HOUR*24;
 
+// todo: remove dupa :(
+    
 function string_fromC(dupa : String) : String;
 begin
 	dupa := StringReplace(dupa, '\a', #7, [rfReplaceAll]);

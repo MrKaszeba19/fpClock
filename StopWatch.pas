@@ -4,6 +4,7 @@
 {$IFDEF FPC}
   {$mode objfpc}{$H+}
   {$modeswitch advancedrecords}
+  {$LONGSTRINGS ON}
 {$ENDIF}
 
 {$IFDEF MSWINDOWS}
@@ -17,8 +18,11 @@ unit stopwatch;
 interface
 uses
   SysUtils
+  {$IFDEF UNIX}
+  ,unixtype,unix
+  {$ENDIF UNIX}
   {$IFDEF LINUX}
-  ,unixtype, linux
+  , linux
   {$ENDIF LINUX}
   ;
 
@@ -40,9 +44,9 @@ type
         {$IFDEF WINDOWS}
             Int64;
         {$ENDIF WINDOWS}
-        {$IFDEF LINUX}
+        {$IFDEF UNIX}
             TTimeSpec;
-        {$ENDIF LINUX}
+        {$ENDIF UNIX}
     strict private
         class var FFrequency : Int64;
         class var FIsHighResolution : Boolean;
@@ -90,12 +94,17 @@ begin
     {$IFDEF WINDOWS}
         FIsHighResolution := QueryPerformanceFrequency(FFrequency);
     {$ENDIF WINDOWS}
-    {$IFDEF LINUX}
-        FIsHighResolution := (clock_getres(CLOCK_MONOTONIC,@r) = 0);
-        FIsHighResolution := FIsHighResolution and (r.tv_nsec <> 0);
-        if (r.tv_nsec <> 0) then
-            FFrequency := C_BILLION div r.tv_nsec;
-    {$ENDIF LINUX}
+    {$IFDEF UNIX}
+        {$IFDEF LINUX}
+            FIsHighResolution := (clock_getres(CLOCK_MONOTONIC,@r) = 0);
+            FIsHighResolution := FIsHighResolution and (r.tv_nsec <> 0);
+            if (r.tv_nsec <> 0) then
+                FFrequency := C_BILLION div r.tv_nsec;
+        {$ELSE}
+            FFrequency := C_BILLION div 1000;
+            FIsHighResolution := False;
+        {$ENDIF}
+    {$ENDIF}
     end;
     FillChar(Result,SizeOf(Result),0);
 end;
@@ -112,14 +121,16 @@ begin
         raise Exception.Create(sStopWatchNotInitialized);
 end;
 
+// todo: optimize down below
+
 function TStopWatch.GetElapsedMilliseconds: Int64;
 begin
     {$IFDEF WINDOWS}
         Result := ElapsedTicks * TicksPerMilliSecond;
     {$ENDIF WINDOWS}
-    {$IFDEF LINUX}
+    {$IFDEF UNIX}
         Result := FElapsed div C_MILLION;
-    {$ENDIF LINUX}
+    {$ENDIF UNIX}
 end;
 
 function TStopWatch.GetElapsedNanoseconds: Int64;
@@ -127,9 +138,9 @@ begin
     {$IFDEF WINDOWS}
         Result := ElapsedTicks * TicksPerNanoSecond;
     {$ENDIF WINDOWS}
-    {$IFDEF LINUX}
+    {$IFDEF UNIX}
         Result := FElapsed;
-    {$ENDIF LINUX}
+    {$ENDIF UNIX}
 end;
 
 function TStopWatch.GetElapsedTicks: Int64;
@@ -138,9 +149,9 @@ begin
     {$IFDEF WINDOWS}
         Result := (FElapsed * TicksPerSecond) div FFrequency;
     {$ENDIF WINDOWS}
-    {$IFDEF LINUX}
+    {$IFDEF UNIX}
         Result := FElapsed div TicksPerNanoSecond;
-    {$ENDIF LINUX}
+    {$ENDIF UNIX}
 end;
 
 procedure TStopWatch.Reset();
@@ -150,6 +161,18 @@ begin
     FillChar(FStartPosition,SizeOf(FStartPosition),0);
 end;
 
+// todo: improve to nanoseconds for Darwin/MacOS (if possible)
+{$IFDEF UNIX}
+function gettime() : TTimeSpec;
+var
+    Time: TTimeVal;
+begin
+    FPGetTimeOfDay(@Time, nil);
+    Result.tv_sec := Int64(Time.tv_sec);
+    Result.tv_nsec := Int64(Time.tv_usec) * 1000;
+end;
+{$ENDIF}
+
 procedure TStopWatch.Start();
 begin
     if FRunning then
@@ -158,9 +181,13 @@ begin
     {$IFDEF WINDOWS}
     QueryPerformanceCounter(FStartPosition);
     {$ENDIF WINDOWS}
-    {$IFDEF LINUX}
-    clock_gettime(CLOCK_MONOTONIC,@FStartPosition);
-    {$ENDIF LINUX}
+    {$IFDEF UNIX}
+        {$IFDEF LINUX}
+        clock_gettime(CLOCK_MONOTONIC,@FStartPosition);
+        {$ELSE}
+        FStartPosition := gettime();
+        {$ENDIF}
+    {$ENDIF}
 end;
 
 procedure TStopWatch.Stop();
@@ -175,8 +202,12 @@ begin
     QueryPerformanceCounter(locEnd);
     FElapsed := FElapsed + (UInt64(locEnd) - UInt64(FStartPosition));
     {$ENDIF WINDOWS}
-    {$IFDEF LINUX}
-    clock_gettime(CLOCK_MONOTONIC,@locEnd);
+    {$IFDEF UNIX}
+        {$IFDEF LINUX}
+        clock_gettime(CLOCK_MONOTONIC,@locEnd);
+        {$ELSE}
+        locEnd := gettime();
+        {$ENDIF}
     if (locEnd.tv_nsec < FStartPosition.tv_nsec) then begin
         s := locEnd.tv_sec - FStartPosition.tv_sec - 1;
         n := C_BILLION + locEnd.tv_nsec - FStartPosition.tv_nsec;
@@ -185,7 +216,7 @@ begin
         n := locEnd.tv_nsec - FStartPosition.tv_nsec;
     end;
     FElapsed := FElapsed + (s * C_BILLION) + n;
-    {$ENDIF LINUX}
+    {$ENDIF UNIX}
 end;
 
 end.
