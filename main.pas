@@ -23,24 +23,23 @@ const SEC = 10000000.0;
 const MIN = SEC*60;
 const HOUR = MIN*60;
 const DAY = HOUR*24;
-
-// todo: remove dupa :(
+const WEEK = DAY*7;
     
-function string_fromC(dupa : String) : String;
+function string_fromC(x : String) : String;
 begin
-	dupa := StringReplace(dupa, '\a', #7, [rfReplaceAll]);
-	dupa := StringReplace(dupa, '\b', #8, [rfReplaceAll]);
-	dupa := StringReplace(dupa, '\e', #27, [rfReplaceAll]);
-	dupa := StringReplace(dupa, '\f', #12, [rfReplaceAll]);
-	dupa := StringReplace(dupa, '\n', #10, [rfReplaceAll]);
-	dupa := StringReplace(dupa, '\r', #13, [rfReplaceAll]);
-	dupa := StringReplace(dupa, '\t', #9, [rfReplaceAll]);
-	dupa := StringReplace(dupa, '\v', #11, [rfReplaceAll]);
-	dupa := StringReplace(dupa, '\\', '\', [rfReplaceAll]);
-	dupa := StringReplace(dupa, '\''', #39, [rfReplaceAll]);
-	dupa := StringReplace(dupa, '\"', #34, [rfReplaceAll]);
-	dupa := StringReplace(dupa, '\?', '?', [rfReplaceAll]);
-	Result := dupa;
+	x := StringReplace(x, '\a', #7, [rfReplaceAll]);
+	x := StringReplace(x, '\b', #8, [rfReplaceAll]);
+	x := StringReplace(x, '\e', #27, [rfReplaceAll]);
+	x := StringReplace(x, '\f', #12, [rfReplaceAll]);
+	x := StringReplace(x, '\n', #10, [rfReplaceAll]);
+	x := StringReplace(x, '\r', #13, [rfReplaceAll]);
+	x := StringReplace(x, '\t', #9, [rfReplaceAll]);
+	x := StringReplace(x, '\v', #11, [rfReplaceAll]);
+	x := StringReplace(x, '\\', '\', [rfReplaceAll]);
+	x := StringReplace(x, '\''', #39, [rfReplaceAll]);
+	x := StringReplace(x, '\"', #34, [rfReplaceAll]);
+	x := StringReplace(x, '\?', '?', [rfReplaceAll]);
+	Result := x;
 end;
 
 procedure printClocked(input : Extended; Precision : ShortInt);
@@ -57,7 +56,7 @@ begin
         then write('0', m:1:0, ':')
         else write(m:2:0, ':');
     if (s < 10.0)
-        then write('0', s:2:(Precision))
+        then write('0', s:1:(Precision))
         else write(s:2:(Precision));
 end;
 
@@ -68,11 +67,12 @@ type
         Precision : Integer;
         Units     : Extended;
         CString   : Boolean;
-        Clocked   : Boolean;
+        Clocked   : Boolean; // print execution time in clock format
         {$IFDEF MSWINDOWS}
         Wait      : Integer;
         function GetLatestPowershell : String;
         {$ENDIF}
+        function MeasureExecTime(input : String; ExecPath : String = '') : Int64;
     protected
         procedure DoRun; override;
     public
@@ -104,16 +104,38 @@ begin
 end;
 {$ENDIF}
 
+function FPClock.MeasureExecTime(input : String; ExecPath : String = '') : Int64;
+var
+    Clock    : TStopWatch;
+    {$IFDEF UNIX}
+    Status   : LongInt;
+    {$ENDIF}
+begin
+    Clock := TStopwatch.Create;
+    if (input = '') then
+    begin
+        Clock.Start();
+        Clock.Stop();
+    end else begin
+        Clock.Start();
+        {$IFDEF MSWINDOWS}
+        SysUtils.ExecuteProcess(utf8toansi(ExecPath + ' /c "' + input + '"'), '', []);
+        {$ENDIF}
+        {$IFDEF UNIX}
+        Status := fpSystem(input);
+        {$ENDIF}
+        Clock.Stop();
+    end;
+    Result := Clock.ElapsedTicks;
+end;
+
 procedure FPClock.DoRun;
 var
     input    : String;
     Clock    : TStopWatch;
+    Elapsed  : Int64;
     {$IFDEF MSWINDOWS}
-    //Result   : String;
     ExecPath : String;
-    {$ENDIF}
-    {$IFDEF UNIX}
-    Status   : LongInt;
     {$ENDIF}
 begin
     if HasOption('h', 'help') then begin
@@ -144,29 +166,35 @@ begin
     if HasOption('u', 'units') then
     begin
         case getOptionValue('u', 'units') of
+            't', 
             'ticks' : Units := TICK;
-            'ns' : Units := NANOSEC;
-            'nano' : Units := NANOSEC;
+            'ns', 
+            'nano',
             'nanoseconds' : Units := NANOSEC;
-            'mus' : Units := MICROSEC;
-            'μs' : Units := MICROSEC;
-            'micro' : Units := MICROSEC;
+            'mus',
+            'μs',
+            'micro',
             'microseconds' : Units := MICROSEC;
-            'ms' : Units := MILLISEC;
-            'milli' : Units := MILLISEC;
+            'ms', 
+            'milli',
             'milliseconds' : Units := MILLISEC;
-            's' : Units := SEC;
-            'secs' : Units := SEC;
+            's',
+            'sec',
+            'secs',
             'seconds' : Units := SEC;
-            'm' : Units := MIN;
-            'mins' : Units := MIN;
+            'm',
+            'min',
+            'mins',
             'minutes' : Units := MIN;
-            'h' : Units := HOUR;
-            'hrs' : Units := HOUR;
+            'h', 
+            'hr',
+            'hrs',
             'hours' : Units := HOUR;
-            'd' : Units := DAY;
+            'd',
             'days' : Units := DAY;
-            'c' : Clocked := True;
+            'w',
+            'weeks' : Units := WEEk;
+            'c',
             'clock' : Clocked := True;
             else begin
                 writeln(StdErr, 'Error: Invalid units parameter value');
@@ -213,21 +241,26 @@ begin
             else ExecPath := getOptionValue('e', 'env');
         end;
     end;
-    {$ENDIF}
-
-    Clock := TStopwatch.Create;
-    Clock.Start();
-    {$IFDEF MSWINDOWS}
-    SysUtils.ExecuteProcess(utf8toansi(ExecPath + ' /c "' + input + '"'), '', []);
+    Elapsed := MeasureExecTime(input, ExecPath);
     {$ENDIF}
     {$IFDEF UNIX}
-    Status := fpSystem(input);
-    {$ENDIF}
-    Clock.Stop();
+    Elapsed := MeasureExecTime(input);
+    {$ENDIF UNIX}
+
+    //Clock := TStopwatch.Create;
+    //Clock.Start();
+    //{$IFDEF MSWINDOWS}
+    //SysUtils.ExecuteProcess(utf8toansi(ExecPath + ' /c "' + input + '"'), '', []);
+    //{$ENDIF}
+    //{$IFDEF UNIX}
+    //Status := fpSystem(input);
+    //{$ENDIF}
+    //Clock.Stop();
 
     if (Clocked) 
-        then printClocked(Clock.ElapsedTicks / Units, Precision)
-        else write((Clock.ElapsedTicks / Units):2:(Precision));
+        then printClocked(Elapsed / Units, Precision)
+        else write((Elapsed / Units):1:(Precision));
+        //else write((Elapsed / Units):2:(Precision));
     if (FeedLine) then writeln();
 
     {$IFDEF MSWINDOWS}
@@ -276,7 +309,7 @@ begin
     writeln('   -p N, --prec=N       : Set precision to N digits (default N=4)');
     writeln('   -P  , --prompt       : Prompt for a command from standard input');
     writeln('   -u U, --units=U      : Set measurement unit to U');
-    writeln('                          (U in [ticks, clock, ns, mus, μs, ms, s, m, h, d])');
+    writeln('                          (U in [ticks, clock, ns, mus, ms, s, m, h, d, w])');
     {$IFDEF MSWINDOWS}
     writeln('   -w  , --wait         : Pause after measuring time (Windows only)');
     writeln('   -w N, --wait=N       : Wait N milliseconds after measuring time ');
