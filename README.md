@@ -34,7 +34,7 @@ Author: Paul Lipkowski
     * minutes – `m`, `min`, `mins` or `minutes`
     * seconds – `s`, `sec`, `secs` or `seconds`
     * milliseconds – `ms`, `milli` or `milliseconds`
-    * microseconds – `μs`, `mus`, `micro` or `microseconds`
+    * microseconds – `u`, `us`, `μs`, `mus`, `micro` or `microseconds`
     * ticks – `t`, `ticks`
     * nanoseconds – `ns`, `nano` or `nanoseconds` (The stopwatch is accurate to 1 tick = 100 ns though - or 1 μs = 1000 ns, if you use MacOS)
     * clock – `c`, `clock` (output like `00:00:00.0000`, amount of decimal numbers depends on `prec` flag).

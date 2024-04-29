@@ -171,6 +171,8 @@ begin
             'ns', 
             'nano',
             'nanoseconds' : Units := NANOSEC;
+            'u',
+            'us',
             'mus',
             'μs',
             'micro',
