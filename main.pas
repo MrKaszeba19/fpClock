@@ -168,6 +168,7 @@ begin
         case getOptionValue('u', 'units') of
             't', 
             'ticks' : Units := TICK;
+            'n',
             'ns', 
             'nano',
             'nanoseconds' : Units := NANOSEC;
@@ -249,20 +250,9 @@ begin
     Elapsed := MeasureExecTime(input);
     {$ENDIF UNIX}
 
-    //Clock := TStopwatch.Create;
-    //Clock.Start();
-    //{$IFDEF MSWINDOWS}
-    //SysUtils.ExecuteProcess(utf8toansi(ExecPath + ' /c "' + input + '"'), '', []);
-    //{$ENDIF}
-    //{$IFDEF UNIX}
-    //Status := fpSystem(input);
-    //{$ENDIF}
-    //Clock.Stop();
-
     if (Clocked) 
         then printClocked(Elapsed / Units, Precision)
         else write((Elapsed / Units):1:(Precision));
-        //else write((Elapsed / Units):2:(Precision));
     if (FeedLine) then writeln();
 
     {$IFDEF MSWINDOWS}
@@ -323,7 +313,7 @@ begin
     writeln('    - fpclock ''cp ./foo/ ./bar -r'' -n');
     writeln('    - fpclock --prompt');
     writeln();
-    writeln('More info at https://github.com/RooiGevaar19/fpClock');
+    writeln('More info at https://github.com/MrKaszeba19/fpClock');
 end;
 
 var App : FPClock;
@@ -335,8 +325,4 @@ begin
     App.Title := 'fpclock';
     App.Run;
     App.Free;
-    //{$IFDEF MSWINDOWS}
-    //Sleep(500);
-    //{$ENDIF}
-    //readln();
 end.
