@@ -1,7 +1,7 @@
 @echo off
 echo Starting...
 
-set ver=3.0.4
+set ver=3.2.0
 
 echo Attempting to install from Lazarus FPC executable...
 call C:\lazarus\fpc\%ver%\bin\x86_64-win64\fpc.exe main.pas -o"fpclock.exe"

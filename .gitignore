@@ -3,4 +3,5 @@ fpclock
 *.ppu
 *.rsj
 trash/
+releases/
 *.exe
