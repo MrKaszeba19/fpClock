@@ -15,6 +15,16 @@ uses SysUtils, Classes, CustApp,
     {$ENDIF}
     MathUtils, StopWatch;
 
+const PROG_isStable = True;
+const PROG_date = {$I %DATE%};
+const PROG_version = '1.1.1';
+const PROG_targetCPU = {$I %FPCTARGETCPU%};
+{$ifdef MSWINDOWS}
+const PROG_targetOS = 'Windows';
+{$else} 
+const PROG_targetOS = {$I %FPCTARGETOS%};
+{$endif}
+
 const NANOSEC = 0.01;
 const TICK = 1;
 const MICROSEC = 10.0;
@@ -79,6 +89,8 @@ type
         constructor Create(TheOwner: TComponent); override;
         destructor Destroy; override;
         procedure WriteHelp; virtual;
+        procedure WriteVersion; virtual;
+        procedure WriteVersionFull; virtual;
 end;
 
 {$IFDEF MSWINDOWS}
@@ -140,6 +152,14 @@ var
 begin
     if HasOption('h', 'help') then begin
         WriteHelp();
+        Halt();
+    end;
+    if HasOption('v', 'version') then begin
+        WriteVersion();
+        Halt();
+    end;
+    if HasOption('V', 'version-full') then begin
+        WriteVersionFull();
         Halt();
     end;
     if HasOption('n', 'no-feed-line') then FeedLine := False;
@@ -302,6 +322,8 @@ begin
     writeln('   -P  , --prompt       : Prompt for a command from standard input');
     writeln('   -u U, --units=U      : Set measurement unit to U');
     writeln('                          (U in [ticks, clock, ns, mus, ms, s, m, h, d, w])');
+    writeln('   -v  , --version      : Print program version');
+    writeln('   -V  , --version-full : Print full program information');
     {$IFDEF MSWINDOWS}
     writeln('   -w  , --wait         : Pause after measuring time (Windows only)');
     writeln('   -w N, --wait=N       : Wait N milliseconds after measuring time ');
@@ -314,6 +336,20 @@ begin
     writeln('    - fpclock --prompt');
     writeln();
     writeln('More info at https://github.com/MrKaszeba19/fpClock');
+end;
+
+procedure FPClock.WriteVersion;
+begin
+    if (PROG_isStable)
+        then writeln(PROG_version)
+        else writeln('unstable build '+PROG_date);
+end;
+
+procedure FPClock.WriteVersionFull;
+begin
+    if (PROG_isStable)
+        then writeln(PROG_version+' for '+PROG_targetOS+' '+PROG_targetCPU)
+        else writeln('unstable build '+PROG_date+' for '+PROG_targetOS+' '+PROG_targetCPU); 
 end;
 
 var App : FPClock;
